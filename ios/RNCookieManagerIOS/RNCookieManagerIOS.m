@@ -74,9 +74,14 @@ RCT_EXPORT_METHOD(setFromResponse:(NSURL *)url
     value:(NSString *)value
     resolver:(RCTPromiseResolveBlock)resolve
     rejecter:(RCTPromiseRejectBlock)reject) {
-    NSArray *cookies = [NSHTTPCookie cookiesWithResponseHeaderFields:@{@"Set-Cookie": value} forURL:url];
-    [[NSHTTPCookieStorage sharedHTTPCookieStorage] setCookies:cookies forURL:url mainDocumentURL:NULL];
-    resolve(nil);
+    dispatch_async(dispatch_get_main_queue(), ^(){
+        NSArray *cookies = [NSHTTPCookie cookiesWithResponseHeaderFields:@{@"Set-Cookie": value} forURL:url];
+        WKHTTPCookieStore *cookieStore = [[WKWebsiteDataStore defaultDataStore] httpCookieStore];
+        for(NSHTTPCookie *currentCookie in cookies) {
+            [cookieStore setCookie:currentCookie completionHandler:nil];
+        }
+        resolve(nil);
+    });
 }
 
 RCT_EXPORT_METHOD(getFromResponse:(NSURL *)url
